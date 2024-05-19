@@ -6,10 +6,25 @@
 
     slice sender_address = cs~load_msg_addr();
 
-    set_data(begin_cell().store_slice(sender_address).end_cell());
-}
+    int op = in_msg_body~load_uint(32);
 
-slice get_the_latest_sender() method_id {
+    if (op == 1) {
+        slice ds = get_data().begin_parse();
+        int counter_value = ds~load_uint(32); 
+
+        set_data(
+            begin_cell()
+                .store_uint(counter_value + 1, 32)
+                .store_slice(sender_address)
+                .end_cell()
+        );
+    }
+}   
+
+(int, slice) get_contract_storage_data() method_id {
     slice ds = get_data().begin_parse();
-    return ds~load_msg_addr();
+    return (
+        ds~load_uint(32),
+        ds~load_msg_addr()
+    );
 }
