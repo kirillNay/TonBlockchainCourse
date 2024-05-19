@@ -1,5 +1,17 @@
 import { Address, Cell, Contract, ContractProvider, SendMode, Sender, beginCell, contractAddress } from "ton-core";
 
+export type MainContractConfig = {
+    number: number,
+    address: Address
+}
+
+export function mainConfigContractToCell(config: MainContractConfig): Cell {
+    return beginCell()
+        .storeUint(config.number, 32)
+        .storeAddress(config.address)
+        .endCell()
+}
+
 export class MainContract implements Contract {
 
     constructor(
@@ -9,38 +21,38 @@ export class MainContract implements Contract {
 
     }
 
-    static createFromConfig(config: any, code: Cell, workchain = 0) {
-        const data = beginCell().endCell();
+    static createFromConfig(config: MainContractConfig, code: Cell, workchain = 0) {
+        const data = mainConfigContractToCell(config);
         const init = { code, data };
         const address = contractAddress(workchain, init);
 
         return new MainContract(address, init);
     }
 
-    async sendInternalMessage(
+    async sendIncrement(
         provider: ContractProvider,
         sender: Sender,
         value: bigint,
-        storeValue: number
+        increment_by: number
     ) {
+        const msg_body = beginCell()
+            .storeUint(1, 32)
+            .storeUint(increment_by, 32)
+            .endCell();
+
         await provider.internal(sender, {
             value,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell().storeUint(storeValue, 32).endCell()
+            body: msg_body
         })
     }
 
     async getData(provider: ContractProvider) {
-        const { stack } = await provider.get("get_the_latest_sender", []);
+        const { stack } = await provider.get("get_contract_storage_data", []);
         return {
-            recent_sender: stack.readAddress(),
+            number: stack.readNumber(),
+            address: stack.readAddress()
         };
-    }
-
-    async getSum(provider: ContractProvider) {
-        const { stack } = await provider.get("get_sum", []);
-        console.log(stack);
-        return stack.readNumber()
     }
 
 }

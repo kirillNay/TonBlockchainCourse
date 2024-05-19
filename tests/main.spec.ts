@@ -6,18 +6,23 @@ import { MainContract } from "../wrappers/MainContract";
 import "@ton-community/test-utils"
 
 describe("main.fc contract test", () => {
-    it("Gets proper latest address", async () => {
+    it("should successfuly increase counter in contract", async () => {
         const codeCell = Cell.fromBoc(Buffer.from(hex, "hex"))[0];
 
         const blockchain = await Blockchain.create();
 
+        const initAddress = await blockchain.treasury("initAddress");
+
         const contract = blockchain.openContract(
-            MainContract.createFromConfig({}, codeCell)
+            MainContract.createFromConfig({
+                number: 0,
+                address: initAddress.address
+            }, codeCell)
         );
 
         const senderWallet = await blockchain.treasury("sender");
 
-        const sendMessageResult = await contract.sendInternalMessage(senderWallet.getSender(), toNano("0.05"), 20);
+        const sendMessageResult = await contract.sendIncrement(senderWallet.getSender(), toNano("0.05"), 20);
         expect(sendMessageResult.transactions).toHaveTransaction({
             from: senderWallet.address,
             to: contract.address,
@@ -25,6 +30,7 @@ describe("main.fc contract test", () => {
         });
 
         const getDataResult = await contract.getData();
-        expect(getDataResult.recent_sender.toString()).toBe(senderWallet.address.toString());
+        expect(getDataResult.address.toString()).toBe(senderWallet.address.toString());
+        expect(getDataResult.number).toBe(20);
     });
 });
