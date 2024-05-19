@@ -6,10 +6,25 @@
 
     slice sender_address = cs~load_msg_addr();
 
-    set_data(begin_cell().store_slice(sender_address).end_cell());
+    int amount = in_msg_body~load_uint(32);
+    slice ds = get_data().begin_parse();
+    int stored = 0;
+    if (ds.slice_data_empty?() != -1) {
+        ds~load_msg_addr();
+        stored = ds~load_uint(32);
+    }
+    int sum = stored + amount;
+
+    set_data(begin_cell().store_slice(sender_address).store_uint(sum, 32).end_cell());
 }
 
 slice get_the_latest_sender() method_id {
     slice ds = get_data().begin_parse();
     return ds~load_msg_addr();
+}
+
+int get_sum() method_id {
+    slice ds = get_data().begin_parse();
+    slice address = ds~load_msg_addr();
+    return ds~load_uint(32);
 }
