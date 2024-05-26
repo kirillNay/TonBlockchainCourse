@@ -33,7 +33,7 @@ const const::min_tons_for_storage = 10000000; ;; 0.01
 
     if (op == 1) {
         int increment_by = in_msg_body~load_uint(32);
-        save_data(counter_value + increment_by, recent_sender, owner_address);
+        save_data(counter_value + increment_by, sender_address, owner_address);
         return ();
     }
 
